@@ -1,13 +1,16 @@
-import os
-import json
-import asyncio
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+import requests
 from datetime import datetime, timedelta
-import aiohttp
+from collections import defaultdict
+from concurrent.futures import ThreadPoolExecutor, as_completed
+import os
+import json
+import time
 
 app = FastAPI()
 
+# CORS 설정
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -18,83 +21,129 @@ app.add_middleware(
 
 API_KEY = "live_cbf885fa70a2fc14e9482facf3b4c478fe8a851b278223bff0ec1d6017d963ebefe8d04e6d233bd35cf2fabdeb93fb0d"
 BASE_URL = "https://open.api.nexon.com"
-HEADERS = {"x-nxopen-api-key": API_KEY}
+headers = {"x-nxopen-api-key": API_KEY}
 today = (datetime.today() - timedelta(days=1)).strftime("%Y-%m-%d")
-CACHE_FILE = "kancho_bingsoo_cache.json"
-CACHE_TTL = 600  # 10분
 
-# --------------------- API CALL ---------------------
+CACHE_FILE = "cache.json"
+CACHE_TTL = 600  # 10분 (초)
 
-async def fetch_json(session, url, params):
-    async with session.get(url, params=params, headers=HEADERS) as res:
-        return await res.json()
 
-async def get_character_ocid(session, name):
-    url = f"{BASE_URL}/maplestory/v1/id"
-    return (await fetch_json(session, url, {"character_name": name})).get("ocid")
-
-async def get_union_main_name(session, ocid):
-    url = f"{BASE_URL}/maplestory/v1/ranking/union"
-    data = await fetch_json(session, url, {"ocid": ocid, "world_name": "베라", "date": today})
-    return data.get("ranking", [{}])[0].get("character_name")
-
-async def get_character_guild_name(session, ocid):
-    url = f"{BASE_URL}/maplestory/v1/character/basic"
-    return (await fetch_json(session, url, {"ocid": ocid, "date": today})).get("character_guild_name", "")
-
-async def process_character(session, alt):
-    ocid = await get_character_ocid(session, alt)
-    if not ocid:
-        return None
-    main_name = await get_union_main_name(session, ocid)
-    if not main_name or main_name == alt:
-        return None
-    main_ocid = await get_character_ocid(session, main_name)
-    if not main_ocid:
-        return None
-    guild_name = await get_character_guild_name(session, main_ocid)
-    if guild_name == "빙수":
-        return {"alt": alt, "main": main_name}
+def get_oguild_id(guild_name: str) -> str | None:
+    url = f"{BASE_URL}/maplestory/v1/guild/id"
+    params = {"guild_name": guild_name, "world_name": "베라"}
+    res = requests.get(url, params=params, headers=headers)
+    if res.status_code == 200:
+        return res.json().get("oguild_id")
     return None
 
-async def get_guild_members(session, guild_name):
-    url = f"{BASE_URL}/maplestory/v1/guild/id"
-    res = await fetch_json(session, url, {"guild_name": guild_name, "world_name": "베라"})
-    oguild_id = res.get("oguild_id")
+
+def get_guild_members(guild_name: str) -> list[str]:
+    oguild_id = get_oguild_id(guild_name)
     if not oguild_id:
         return []
-    url = f"{BASE_URL}/maplestory/v1/guild/basic"
-    res = await fetch_json(session, url, {"oguild_id": oguild_id, "date": today})
-    return res.get("guild_member", [])
 
-# --------------------- 캐싱 및 병렬 집계 ---------------------
+    url = f"{BASE_URL}/maplestory/v1/guild/basic"
+    params = {"oguild_id": oguild_id, "date": today}
+    res = requests.get(url, params=params, headers=headers)
+    if res.status_code == 200:
+        try:
+            return res.json().get("guild_member", [])
+        except Exception as e:
+            print(f"[ERROR] JSON 파싱 실패: {e}")
+    return []
+
+
+def get_character_ocid(character_name: str) -> str | None:
+    url = f"{BASE_URL}/maplestory/v1/id"
+    params = {"character_name": character_name}
+    try:
+        res = requests.get(url, params=params, headers=headers)
+        if res.status_code == 200:
+            return res.json().get("ocid")
+    except Exception as e:
+        print(f"[ERROR] get_character_ocid({character_name}): {e}")
+    return None
+
+
+def get_union_main_character_name(ocid: str) -> str | None:
+    url = f"{BASE_URL}/maplestory/v1/ranking/union"
+    params = {"date": today, "world_name": "베라", "ocid": ocid}
+    try:
+        res = requests.get(url, params=params, headers=headers)
+        if res.status_code == 200:
+            data = res.json().get("ranking", [])
+            if data and isinstance(data, list):
+                return data[0].get("character_name")
+    except Exception as e:
+        print(f"[ERROR] get_union_main_character_name: {e}")
+    return None
+
+
+def get_character_guild_name(ocid: str) -> str:
+    url = f"{BASE_URL}/maplestory/v1/character/basic"
+    params = {"ocid": ocid, "date": today}
+    try:
+        res = requests.get(url, params=params, headers=headers)
+        if res.status_code == 200:
+            return res.json().get("character_guild_name", "")
+    except Exception as e:
+        print(f"[ERROR] get_character_guild_name: {e}")
+    return ""
+
+
+def process_character(alt: str) -> dict | None:
+    try:
+        ocid = get_character_ocid(alt)
+        if not ocid:
+            return None
+
+        main_name = get_union_main_character_name(ocid)
+        if not main_name or main_name == alt:
+            return None
+
+        main_ocid = get_character_ocid(main_name)
+        if not main_ocid:
+            return None
+
+        main_guild = get_character_guild_name(main_ocid)
+        if main_guild == "빙수":
+            return {"alt": alt, "main": main_name}
+    except Exception as e:
+        print(f"[ERROR] processing {alt}: {e}")
+    return None
+
 
 @app.get("/kancho-to-bingsoo")
-async def check_kancho_characters_main_in_bingsoo():
-    # 캐시가 최신이면 리턴
-    if os.path.exists(CACHE_FILE) and (datetime.now().timestamp() - os.path.getmtime(CACHE_FILE)) < CACHE_TTL:
-        with open(CACHE_FILE, "r", encoding="utf-8") as f:
-            return json.load(f)
+def check_kancho_characters_main_in_bingsoo():
+    # 캐시가 최신이면 반환
+    if os.path.exists(CACHE_FILE):
+        last_modified = os.path.getmtime(CACHE_FILE)
+        if time.time() - last_modified < CACHE_TTL:
+            with open(CACHE_FILE, "r", encoding="utf-8") as f:
+                return json.load(f)
 
-    async with aiohttp.ClientSession() as session:
-        kancho_members = await get_guild_members(session, "칸초")
-        tasks = [process_character(session, alt) for alt in kancho_members]
-        results = await asyncio.gather(*tasks)
+    kancho_members = get_guild_members("칸초")
+    if not kancho_members:
+        return {"error": "칸초 길드원 조회 실패"}
 
-    filtered = [r for r in results if r]
+    matched = []
 
-    # main 이름 기준으로 alt 병합
-    grouped = {}
-    for entry in filtered:
-        main = entry["main"]
-        if main not in grouped:
-            grouped[main] = []
-        grouped[main].append(entry["alt"])
+    with ThreadPoolExecutor(max_workers=10) as executor:
+        futures = {executor.submit(process_character, alt): alt for alt in kancho_members}
+        for future in as_completed(futures):
+            result = future.result()
+            if result:
+                matched.append(result)
 
-    linked_characters = [{"main": main, "alt": ", ".join(alts)} for main, alts in grouped.items()]
+    # main 기준 그룹화
+    grouped = defaultdict(list)
+    for entry in matched:
+        grouped[entry["main"]].append(entry["alt"])
+
+    result = [{"main": main, "alts": alts} for main, alts in grouped.items()]
+    data = {"linked_characters": result}
 
     # 캐시 저장
-    data = {"linked_characters": linked_characters}
     with open(CACHE_FILE, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
 
