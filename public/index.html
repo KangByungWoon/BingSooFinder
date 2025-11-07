@@ -7,34 +7,94 @@
   <style>
     body {
       font-family: 'Pretendard', sans-serif;
-      background: #fdfdfd;
+      background: #f0fbff;
       padding: 20px;
       max-width: 800px;
       margin: auto;
+      position: relative;
+      overflow-x: hidden;
     }
 
-    h1 {
-      background: linear-gradient(to right, #ff8fa3, #ffafbd);
-      background-clip: text;
-      -webkit-background-clip: text;
-      color: transparent;
-      -webkit-text-fill-color: transparent;
+    /* ❄ 눈 애니메이션 */
+    .snow {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 1000;
+    }
+
+    .snowflake {
+      position: absolute;
+      top: -10px;
+      color: #fff;
+      font-size: 1.2em;
+      animation: fall linear infinite;
+    }
+
+    @keyframes fall {
+      0% {
+        transform: translateY(0) rotate(0deg);
+        opacity: 1;
+      }
+      100% {
+        transform: translateY(100vh) rotate(360deg);
+        opacity: 0;
+      }
+    }
+
+    .title-box {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: #aee1f9;
+      padding: 20px 30px;
+      border-radius: 16px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.08);
+      margin-bottom: 32px;
+    }
+
+    .title-box span {
+      font-size: 32px;
+      font-weight: 800;
+      margin: 0 10px;
+    }
+
+    .title-left {
+      color: #009fda;
+    }
+
+    .title-right {
+      color: #ff82a9;
+    }
+
+    .link-icon {
+      width: 36px;
+      height: auto;
+    }
+
+    .bingsoo-icon {
+      width: 36px;
+      margin-left: 10px;
     }
 
     .cache-info {
-      background: linear-gradient(90deg, #fce3ec 0%, #ffe8cc 100%);
+      background: linear-gradient(90deg, #d0f4ff 0%, #ffe0f0 100%);
       padding: 16px 24px;
       border-radius: 10px;
       margin-bottom: 24px;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
       color: #333;
       font-size: 15px;
+      animation: fadein 1s ease-in-out;
     }
 
     .cache-info button {
       margin-top: 12px;
-      background-color: #ff8fa3;
-      color: white;
+      background-color: #76d4f2;
+      color: #fff;
       border: none;
       padding: 10px 16px;
       font-weight: bold;
@@ -44,33 +104,156 @@
     }
 
     .cache-info button:hover {
-      background-color: #ff6b8a;
+      background-color: #5ac2e6;
+    }
+
+    .search-box {
+      margin-bottom: 24px;
+    }
+
+    .search-box input[type="text"] {
+      width: calc(100% - 110px);
+      padding: 10px 14px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 15px;
+    }
+
+    .search-box button {
+      padding: 10px 14px;
+      margin-left: 8px;
+      background-color: #009fda;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+
+    .search-box button:hover {
+      background-color: #0085c4;
     }
 
     .main-entry {
-      background: linear-gradient(135deg, #fce3ec 0%, #fcd5ce 100%);
+      background: linear-gradient(135deg, #e0f7ff 0%, #fef6ff 100%);
       padding: 14px 20px;
       margin-bottom: 12px;
       border-radius: 12px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+      animation: fadein 1s ease-in-out;
     }
 
     .main-entry strong {
       display: block;
-      font-size: 18px;
+      font-size: 20px;
+      font-weight: 700;
+      color: #005a9c;
       margin-bottom: 6px;
     }
 
     .main-entry .alts {
-      font-size: 14px;
-      color: #333;
+      font-size: 15px;
+      color: #444;
+      line-height: 1.6;
+    }
+
+    .main-entry .alts strong {
+      font-weight: 600;
+      color: #222;
+    }
+
+    @keyframes fadein {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ☰ 메뉴 버튼 */
+    .menu-toggle {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      background-color: #76d4f2;
+      color: white;
+      border: none;
+      padding: 10px 14px;
+      font-size: 18px;
+      border-radius: 6px;
+      cursor: pointer;
+      z-index: 1100;
+    }
+
+    /* 사이드 메뉴 */
+    .sidebar {
+      position: fixed;
+      top: 0;
+      left: -220px;
+      width: 200px;
+      height: 100%;
+      background-color: #d7f5ff;
+      box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+      padding: 20px;
+      transition: left 0.3s ease;
+      z-index: 1099;
+    }
+
+    .sidebar.open {
+      left: 0;
+    }
+
+    .sidebar h2 {
+      margin-top: 0;
+      font-size: 18px;
+      margin-bottom: 16px;
+      color: #0a5e7a;
+    }
+
+    .sidebar ul {
+      list-style: none;
+      padding: 0;
+    }
+
+    .sidebar ul li {
+      padding: 10px;
+      background: #c1ecf7;
+      margin-bottom: 10px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+
+    .sidebar ul li:hover {
+      background: #9bddf0;
     }
   </style>
 </head>
 <body>
 
-  <h1>빙수 → 칸초 본캐 부캐 모음</h1>
+  <!-- ☰ 메뉴 버튼 -->
+  <button class="menu-toggle" onclick="toggleMenu()">☰ 메뉴</button>
 
+  <!-- 사이드 메뉴 -->
+  <div class="sidebar" id="sidebar">
+    <h2>기능 메뉴</h2>
+    <ul>
+      <li onclick="alert('빙수 → 칸쵸 보기')">빙수 → 칸쵸</li>
+      <li onclick="alert('⚙️ 설정은 준비 중입니다.')">⚙️ 설정</li>
+      <li onclick="alert('📦 기타 기능은 곧 추가됩니다.')">📦 기타</li>
+    </ul>
+  </div>
+
+  <!-- ❄ 눈 내리는 레이어 -->
+  <div class="snow" id="snow-container"></div>
+
+  <!-- 타이틀 -->
+  <div class="title-box">
+    <span class="title-left">빙수</span>
+    <img src="https://emojipedia-us.s3.amazonaws.com/source/skype/289/right-arrow_27a1-fe0f.png" alt="→" class="link-icon">
+    <span class="title-right">칸쵸</span>
+    <img src="https://cdn-icons-png.flaticon.com/512/6862/6862957.png" class="bingsoo-icon" alt="빙수 아이콘" />
+  </div>
+
+  <!-- 캐시 설명 -->
   <div class="cache-info">
     <p>
       <strong>캐시는 이전 검색 기록을 저장해두는 기능입니다.</strong><br>
@@ -80,46 +263,96 @@
     <button onclick="loadData(true)">🔄 캐시 초기화 & 다시 검색</button>
   </div>
 
+  <!-- 검색 박스 -->
+  <div class="search-box">
+    <input type="text" id="search-input" placeholder="본캐 또는 부캐 닉네임으로 검색하세요" />
+    <button onclick="searchCharacter()">🔍 검색</button>
+  </div>
+
+  <!-- 결과 출력 -->
   <div id="result">로딩 중...</div>
 
   <script>
+    function toggleMenu() {
+      document.getElementById("sidebar").classList.toggle("open");
+    }
+
     async function loadData(refresh = false) {
       const container = document.getElementById("result");
       container.innerHTML = "🔄 데이터 불러오는 중... (10초 이상 지속 시 10분 소요 -> 캐시 초기화 중)";
-
       try {
         const url = refresh
           ? "https://bingsoofinder.onrender.com/kancho-to-bingsoo?refresh=true"
           : "https://bingsoofinder.onrender.com/kancho-to-bingsoo";
-
         const response = await fetch(url);
         const data = await response.json();
-
         container.innerHTML = "";
-
         if (!data.linked_characters || data.linked_characters.length === 0) {
           container.textContent = "🔍 일치하는 캐릭터가 없습니다.";
           return;
         }
-
         data.linked_characters.forEach(entry => {
           const div = document.createElement("div");
           div.className = "main-entry";
           div.innerHTML = `
             <strong>${entry.main}</strong>
-            <div class="alts">부캐(칸초 소속)<strong>${entry.alts.join(", ")}</strong></div>
+            <div class="alts">부캐(칸초 소속): <strong>${entry.alts.join(", ")}</strong></div>
           `;
           container.appendChild(div);
         });
-
       } catch (err) {
         container.textContent = "❌ 데이터를 불러오지 못했습니다.";
         console.error(err);
       }
     }
 
-    // 초기 실행
+    async function searchCharacter() {
+      const input = document.getElementById("search-input").value.trim();
+      if (!input) {
+        alert("검색어를 입력하세요.");
+        return;
+      }
+      const container = document.getElementById("result");
+      container.innerHTML = "🔍 검색 중...";
+      try {
+        const url = `https://bingsoofinder.onrender.com/character-search?query=${encodeURIComponent(input)}`;
+        const response = await fetch(url);
+        const data = await response.json();
+        container.innerHTML = "";
+        if (!data || !data.result) {
+          container.textContent = "🔍 검색 결과가 없습니다.";
+          return;
+        }
+        const entry = data.result;
+        const div = document.createElement("div");
+        div.className = "main-entry";
+        div.innerHTML = `
+          <strong>${entry.main}</strong>
+          <div class="alts">부캐(칸초 소속): <strong>${entry.alts.join(", ")}</strong></div>
+        `;
+        container.appendChild(div);
+      } catch (err) {
+        container.textContent = "❌ 검색 중 오류가 발생했습니다.";
+        console.error(err);
+      }
+    }
+
+    // 눈 효과 생성
+    function createSnow() {
+      const snowContainer = document.getElementById("snow-container");
+      for (let i = 0; i < 40; i++) {
+        const snowflake = document.createElement("div");
+        snowflake.classList.add("snowflake");
+        snowflake.textContent = "❄";
+        snowflake.style.left = `${Math.random()*100}%`;
+        snowflake.style.animationDuration = `${5 + Math.random()*5}s`;
+        snowflake.style.fontSize = `${12 + Math.random()*10}px`;
+        snowflake.style.animationDelay = `${Math.random()*5}s`;
+        snowContainer.appendChild(snowflake);
+      }
+    }
     loadData();
+    createSnow();
   </script>
 </body>
 </html>

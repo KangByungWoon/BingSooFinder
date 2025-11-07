@@ -7,6 +7,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 import os
 import json
 import time
+from fastapi import Query
 
 app = FastAPI()
 
@@ -158,3 +159,30 @@ def reset_cache():
         return {"status": "ok", "message": "캐시 초기화됨"}
     except Exception as e:
         return {"status": "error", "message": str(e)}
+    
+@app.get("/character-search")
+def character_search(query: str = Query("")):
+    # 캐시가 없다면 에러 반환
+    if not os.path.exists(CACHE_FILE):
+        return {"error": "캐시가 존재하지 않습니다. 먼저 /kancho-to-bingsoo 엔드포인트를 호출해주세요."}
+
+    # 캐시 로드
+    with open(CACHE_FILE, "r", encoding="utf-8") as f:
+        cache_data = json.load(f)
+        linked_characters = cache_data.get("linked_characters", [])
+
+    # 빈 쿼리는 전체 목록 반환
+    if not query.strip():
+        return {"matched": linked_characters}
+
+    query = query.strip().lower()
+    matched = []
+
+    for entry in linked_characters:
+        main = entry["main"]
+        alts = entry["alts"]
+
+        if query in main.lower() or any(query in alt.lower() for alt in alts):
+            matched.append(entry)
+
+    return {"matched": matched}
