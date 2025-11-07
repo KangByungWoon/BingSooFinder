@@ -25,7 +25,7 @@ headers = {"x-nxopen-api-key": API_KEY}
 today = (datetime.today() - timedelta(days=1)).strftime("%Y-%m-%d")
 
 CACHE_FILE = "cache.json"
-CACHE_TTL = 600  # 10분 (초)
+CACHE_TTL = 3600  # 60분 (초)
 
 
 def get_oguild_id(guild_name: str) -> str | None:

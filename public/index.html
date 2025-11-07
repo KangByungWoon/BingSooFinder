@@ -69,12 +69,12 @@
 </head>
 <body>
 
-  <h1>빙수 → 칸초 캐릭터 링크</h1>
+  <h1>빙수 → 칸초 본캐 부캐 모음</h1>
 
   <div class="cache-info">
     <p>
       <strong>캐시는 이전 검색 기록을 저장해두는 기능입니다.</strong><br>
-      정보는 <strong>10분마다 자동으로 업데이트</strong> 됩니다.<br>
+      정보는 <strong>1시간마다 자동으로 업데이트</strong> 됩니다.<br>
       지금 바로 갱신이 필요하다면 <strong>‘캐시 초기화’</strong> 버튼을 눌러주세요!
     </p>
     <button onclick="loadData(true)">🔄 캐시 초기화 & 다시 검색</button>
@@ -85,7 +85,7 @@
   <script>
     async function loadData(refresh = false) {
       const container = document.getElementById("result");
-      container.innerHTML = "🔄 데이터 불러오는 중...";
+      container.innerHTML = "🔄 데이터 불러오는 중... (10초 이상 지속 시 10분 소요 -> 캐시 초기화 중)";
 
       try {
         const url = refresh
@@ -106,8 +106,8 @@
           const div = document.createElement("div");
           div.className = "main-entry";
           div.innerHTML = `
-            <strong>본캐:</strong> ${entry.main}
-            <div class="alts"><strong>부캐(칸초 소속):</strong> ${entry.alts.join(", ")}</div>
+            <strong>${entry.main}</strong>
+            <div class="alts">부캐(칸초 소속)<strong>${entry.alts.join(", ")}</strong></div>
           `;
           container.appendChild(div);
         });
