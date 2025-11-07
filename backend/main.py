@@ -148,3 +148,13 @@ def check_kancho_characters_main_in_bingsoo():
         json.dump(data, f, ensure_ascii=False, indent=2)
 
     return data
+
+
+@app.post("/kancho-to-bingsoo/reset-cache")
+def reset_cache():
+    try:
+        if os.path.exists(CACHE_FILE):
+            os.remove(CACHE_FILE)
+        return {"status": "ok", "message": "캐시 초기화됨"}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
