@@ -84,12 +84,7 @@ def check_kancho_characters_main_in_bingsoo():
         return {"error": "칸초 길드원 조회 실패"}
 
     matched = []
-    c = 0
-
     for alt in kancho_members:
-        if c >= 5:  # ✅ 테스트 제한 유지
-            break
-
         ocid = get_character_ocid(alt)
         if not ocid:
             continue
@@ -103,8 +98,6 @@ def check_kancho_characters_main_in_bingsoo():
 
         if main_guild_name == "빙수":
             matched.append({"alt": alt, "main": main_name})
-
-        c += 1
 
     # ✅ main 기준 그룹화
     grouped = defaultdict(list)
