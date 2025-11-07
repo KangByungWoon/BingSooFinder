@@ -1,121 +1,124 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8">
-  <title>빙수 ↔ 칸초 캐릭터 링크</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>빙수 → 칸초 연결 확인</title>
   <style>
     body {
-      font-family: Arial, sans‑serif;
-      background: #fff5f8;
-      color: #333;
-      margin: 0;
-      padding: 0;
-    }
-    header {
-      text-align: center;
+      font-family: 'Pretendard', sans-serif;
+      background: #fdfdfd;
       padding: 20px;
-      background: linear-gradient(90deg, #ff9a9e, #fad0c4);
-      color: #fff;
-      font-size: 2em;
-      font-weight: bold;
-    }
-    #controls {
-      text-align: center;
-      margin: 20px 0;
-    }
-    #controls button {
-      background: #ff6f91;
-      color: #fff;
-      border: none;
-      padding: 10px 20px;
-      font-size: 1em;
-      border-radius: 5px;
-      cursor: pointer;
-    }
-    #result {
-      width: 90%;
       max-width: 800px;
-      margin: 0 auto 40px auto;
+      margin: auto;
     }
-    .card {
-      background: #fff;
-      border-radius: 8px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-      padding: 15px;
-      margin-bottom: 15px;
+
+    h1 {
+      background: linear-gradient(to right, #ff8fa3, #ffafbd);
+      background-clip: text;
+      -webkit-background-clip: text;
+      color: transparent;
+      -webkit-text-fill-color: transparent;
     }
-    .card strong {
+
+    .cache-info {
+      background: linear-gradient(90deg, #fce3ec 0%, #ffe8cc 100%);
+      padding: 16px 24px;
+      border-radius: 10px;
+      margin-bottom: 24px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      color: #333;
+      font-size: 15px;
+    }
+
+    .cache-info button {
+      margin-top: 12px;
+      background-color: #ff8fa3;
+      color: white;
+      border: none;
+      padding: 10px 16px;
+      font-weight: bold;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+
+    .cache-info button:hover {
+      background-color: #ff6b8a;
+    }
+
+    .main-entry {
+      background: linear-gradient(135deg, #fce3ec 0%, #fcd5ce 100%);
+      padding: 14px 20px;
+      margin-bottom: 12px;
+      border-radius: 12px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    }
+
+    .main-entry strong {
       display: block;
-      font-size: 1.2em;
-      margin-bottom: 5px;
+      font-size: 18px;
+      margin-bottom: 6px;
     }
-    .alts {
-      font-size: 0.9em;
-      color: #555;
-      margin-top: 8px;
+
+    .main-entry .alts {
+      font-size: 14px;
+      color: #333;
     }
   </style>
 </head>
 <body>
-  <header>빙수 ↔ 칸초 캐릭터 링크</header>
 
-  <div id="controls">
-    <button id="refreshBtn">캐시 초기화 & 다시 검색</button>
+  <h1>빙수 → 칸초 캐릭터 링크</h1>
+
+  <div class="cache-info">
+    <p>
+      <strong>캐시는 이전 검색 기록을 저장해두는 기능입니다.</strong><br>
+      정보는 <strong>10분마다 자동으로 업데이트</strong> 됩니다.<br>
+      지금 바로 갱신이 필요하다면 <strong>‘캐시 초기화’</strong> 버튼을 눌러주세요!
+    </p>
+    <button onclick="loadData(true)">🔄 캐시 초기화 & 다시 검색</button>
   </div>
 
-  <div id="result">
-    <!-- 카드들이 여기에 생성됩니다 -->
-  </div>
+  <div id="result">로딩 중...</div>
 
   <script>
-    const API_URL = "https://bingsoofinder.onrender.com/kancho-to-bingsoo";
-
-    async function loadData() {
+    async function loadData(refresh = false) {
       const container = document.getElementById("result");
-      container.innerHTML = "<p>로딩 중…</p>";
+      container.innerHTML = "🔄 데이터 불러오는 중...";
 
       try {
-        const response = await fetch(API_URL);
-        if (!response.ok) {
-          throw new Error(`응답 오류: ${response.status}`);
-        }
+        const url = refresh
+          ? "https://bingsoofinder.onrender.com/kancho-to-bingsoo?refresh=true"
+          : "https://bingsoofinder.onrender.com/kancho-to-bingsoo";
+
+        const response = await fetch(url);
         const data = await response.json();
 
+        container.innerHTML = "";
+
         if (!data.linked_characters || data.linked_characters.length === 0) {
-          container.innerHTML = "<p>일치하는 캐릭터가 없습니다.</p>";
+          container.textContent = "🔍 일치하는 캐릭터가 없습니다.";
           return;
         }
 
-        container.innerHTML = "";
         data.linked_characters.forEach(entry => {
           const div = document.createElement("div");
-          div.className = "card";
+          div.className = "main-entry";
           div.innerHTML = `
-            <strong>본캐: ${entry.main}</strong>
-            <div class="alts">부캐(칸초 소속): ${entry.alts.join(", ")}</div>
+            <strong>본캐:</strong> ${entry.main}
+            <div class="alts"><strong>부캐(칸초 소속):</strong> ${entry.alts.join(", ")}</div>
           `;
           container.appendChild(div);
         });
-      } catch (error) {
-        container.innerHTML = `<p>데이터 로드 중 오류 발생: ${error.message}</p>`;
-        console.error(error);
+
+      } catch (err) {
+        container.textContent = "❌ 데이터를 불러오지 못했습니다.";
+        console.error(err);
       }
     }
 
-    document.getElementById("refreshBtn").addEventListener("click", async () => {
-      // 캐시 리셋용 API 호출
-      try {
-        const resetRes = await fetch(API_URL + "/reset-cache", { method: "POST" });
-        if (!resetRes.ok) {
-          throw new Error(`캐시 리셋 오류: ${resetRes.status}`);
-        }
-        await loadData();
-      } catch (error) {
-        alert("캐시 초기화 중 오류가 발생했습니다: " + error.message);
-      }
-    });
-
-    // 페이지 로드 시 자동 호출
+    // 초기 실행
     loadData();
   </script>
 </body>
