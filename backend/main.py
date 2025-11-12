@@ -161,28 +161,26 @@ def reset_cache():
         return {"status": "error", "message": str(e)}
     
 @app.get("/character-search")
-def character_search(query: str = Query("")):
-    # 캐시가 없다면 에러 반환
-    if not os.path.exists(CACHE_FILE):
-        return {"error": "캐시가 존재하지 않습니다. 먼저 /kancho-to-bingsoo 엔드포인트를 호출해주세요."}
+def search_character(query: str):
+    """입력된 닉네임이 main 또는 alt에 포함된 결과 반환"""
+    try:
+        # 캐시된 데이터 불러오기
+        if not os.path.exists(CACHE_FILE):
+            return {"error": "데이터가 아직 생성되지 않았습니다."}
 
-    # 캐시 로드
-    with open(CACHE_FILE, "r", encoding="utf-8") as f:
-        cache_data = json.load(f)
-        linked_characters = cache_data.get("linked_characters", [])
+        with open(CACHE_FILE, "r", encoding="utf-8") as f:
+            data = json.load(f)
 
-    # 빈 쿼리는 전체 목록 반환
-    if not query.strip():
-        return {"matched": linked_characters}
+        all_chars = data.get("linked_characters", [])
+        query_lower = query.lower()
 
-    query = query.strip().lower()
-    matched = []
+        for entry in all_chars:
+            # ✅ main 또는 alts 중 일부라도 일치
+            if query_lower in entry["main"].lower() or any(query_lower in alt.lower() for alt in entry["alts"]):
+                return {"result": entry}
 
-    for entry in linked_characters:
-        main = entry["main"]
-        alts = entry["alts"]
+        # ✅ 일치하는 항목이 없을 때
+        return {"result": None}
 
-        if query in main.lower() or any(query in alt.lower() for alt in alts):
-            matched.append(entry)
-
-    return {"matched": matched}
+    except Exception as e:
+        return {"error": str(e)}

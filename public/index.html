@@ -309,21 +309,28 @@
 
     async function searchCharacter() {
       const input = document.getElementById("search-input").value.trim();
+      const container = document.getElementById("result");
+    
+      // ✅ 빈 입력 시 전체 목록 다시 표시
       if (!input) {
-        alert("검색어를 입력하세요.");
+        loadData();
         return;
       }
-      const container = document.getElementById("result");
+    
       container.innerHTML = "🔍 검색 중...";
       try {
         const url = `https://bingsoofinder.onrender.com/character-search?query=${encodeURIComponent(input)}`;
         const response = await fetch(url);
         const data = await response.json();
         container.innerHTML = "";
+      
+        // ✅ 검색 결과 없음 처리
         if (!data || !data.result) {
           container.textContent = "🔍 검색 결과가 없습니다.";
           return;
         }
+      
+        // ✅ 검색 결과 출력
         const entry = data.result;
         const div = document.createElement("div");
         div.className = "main-entry";
