@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from fastapi import Header
 from fastapi.middleware.cors import CORSMiddleware
 import requests
 from datetime import datetime, timedelta
@@ -8,6 +9,8 @@ import os
 import json
 import time
 from fastapi import Query
+from pydantic import BaseModel
+from typing import Optional, List
 
 app = FastAPI()
 
@@ -27,6 +30,9 @@ today = (datetime.today() - timedelta(days=1)).strftime("%Y-%m-%d")
 
 CACHE_FILE = "cache.json"
 CACHE_TTL = 3600  # 60분 (초)
+
+NOTICE_FILE = "notices.json"
+ADMIN_PASSWORD = "bingsoo111"  # 환경변수 처리 권장
 
 
 def get_oguild_id(guild_name: str) -> str | None:
@@ -184,3 +190,51 @@ def search_character(query: str):
 
     except Exception as e:
         return {"error": str(e)}
+    
+class Notice(BaseModel):
+    title: str
+    content: str
+
+class StoredNotice(Notice):
+    id: int
+    timestamp: str
+
+def load_notices() -> List[StoredNotice]:
+    if not os.path.exists(NOTICE_FILE):
+        return []
+    with open(NOTICE_FILE, "r", encoding="utf-8") as f:
+        return [StoredNotice(**item) for item in json.load(f)]
+
+def save_notices(notices: List[StoredNotice]):
+    with open(NOTICE_FILE, "w", encoding="utf-8") as f:
+        json.dump([n.dict() for n in notices], f, ensure_ascii=False, indent=2)
+
+@app.get("/notices")
+def get_notices():
+    try:
+        return load_notices()
+    except Exception as e:
+        return {"error": f"공지사항을 불러오는 중 오류: {e}"}
+
+@app.post("/notices")
+def post_notice(notice: Notice, x_admin_token: Optional[str] = Header(None)):
+    if x_admin_token != ADMIN_PASSWORD:
+        return {"error": "관리자 인증 실패"}
+
+    try:
+        notices = load_notices()
+        next_id = max([n.id for n in notices], default=0) + 1
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M")
+
+        new_notice = StoredNotice(
+            id=next_id,
+            title=notice.title,
+            content=notice.content,
+            timestamp=timestamp
+        )
+
+        notices.insert(0, new_notice)
+        save_notices(notices)
+        return new_notice
+    except Exception as e:
+        return {"error": f"공지 등록 실패: {e}"}
